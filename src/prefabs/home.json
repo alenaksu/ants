@@ -1,0 +1,22 @@
+{
+  "name": "Home",
+  "components": [
+    {
+      "type": "Home",
+      "properties": {}
+    },
+    {
+      "type": "Position",
+      "properties": {
+        "x": 100,
+        "y": 100
+      }
+    },
+    {
+      "type": "Renderable",
+      "properties": {
+        "type": "home"
+      }
+    }
+  ]
+}

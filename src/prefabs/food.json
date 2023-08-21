@@ -1,0 +1,22 @@
+{
+  "name": "Food",
+  "components": [
+    {
+      "type": "Food",
+      "properties": {}
+    },
+    {
+      "type": "Position",
+      "properties": {
+        "x": 100,
+        "y": 100
+      }
+    },
+    {
+      "type": "Renderable",
+      "properties": {
+        "type": "food"
+      }
+    }
+  ]
+}

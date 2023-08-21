@@ -1,0 +1,24 @@
+{
+  "name": "HomeMarker",
+  "components": [
+    {
+      "type": "Marker",
+      "properties": {
+        "type": "toHome"
+      }
+    },
+    {
+      "type": "Position",
+      "properties": {
+        "x": 100,
+        "y": 100
+      }
+    },
+    {
+      "type": "Renderable",
+      "properties": {
+        "type": "homeMarker"
+      }
+    }
+  ]
+}

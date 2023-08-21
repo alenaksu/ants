@@ -1,0 +1,29 @@
+{
+  "name": "Ant",
+  "components": [
+    {
+      "type": "Ant",
+      "properties": {
+        "state": "exploring",
+        "markerFrequency": 1000
+      }
+    },
+    {
+      "type": "Position",
+      "properties": {
+        "x": 100,
+        "y": 100
+      }
+    },
+    {
+      "type": "Velocity",
+      "properties": {
+        "speed": 1
+      }
+    },
+    {
+      "type": "Renderable",
+      "properties": { "type": "ant" }
+    }
+  ]
+}
