@@ -1,11 +1,11 @@
-import { Component } from 'geotic';
+import { Component } from "geotic";
 
 export default class Marker extends Component {
-  declare lifespan: number;
-  declare type: 'toHome' | 'toFood';
+    declare type: "toHome" | "toFood";
+    declare power: number;
 
-  static properties = {
-    lifespan: 20_000,
-    type: '',
-  };
+    static properties = {
+        power: 1,
+        type: "",
+    };
 }

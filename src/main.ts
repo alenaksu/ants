@@ -1,4 +1,5 @@
 import * as PIXI from 'pixi.js';
+import {PixelateFilter} from '@pixi/filter-pixelate';
 import { range } from './utils';
 import { Engine } from 'geotic';
 import Position from './components/Position';
@@ -11,12 +12,12 @@ import foodMarkerPrefab from './prefabs/foodMarker.json' assert { type: 'json' }
 import homeMarkerPrefab from './prefabs/homeMarker.json' assert { type: 'json' };
 import foodPrefab from './prefabs/food.json' assert { type: 'json' };
 import homePrefab from './prefabs/home.json' assert { type: 'json' };
-import createMarkerSystem from './systems/marker';
 import Marker from './components/Marker';
 import Ant from './components/Ant';
-import createAntSystem from './systems/ant';
+import createColonySystem from './systems/colony';
 import Food from './components/Food';
 import Home from './components/Home';
+import Decay from './components/Decay';
 
 export const engine = new Engine();
 engine.registerComponent(Position);
@@ -26,6 +27,7 @@ engine.registerComponent(Marker);
 engine.registerComponent(Ant);
 engine.registerComponent(Food);
 engine.registerComponent(Home);
+engine.registerComponent(Decay);
 
 engine.registerPrefab(antPrefab);
 engine.registerPrefab(foodMarkerPrefab);
@@ -34,20 +36,20 @@ engine.registerPrefab(foodPrefab);
 engine.registerPrefab(homePrefab);
 
 const app = new PIXI.Application({
-  background: '#1099bb',
+  background: '#333',
   resizeTo: window,
 });
+
+// app.stage.filters = [new PixelateFilter(4)];
 
 const world = engine.createWorld();
 const movementSystem = createMovementSystem(world, app);
 const renderSystem = createRenderSystem(world, app);
-const markerSystem = createMarkerSystem(world);
-const antSystem = createAntSystem(world);
+const colonySystem = createColonySystem(world, app);
 
 const render = (dt: number) => {
   movementSystem();
-  antSystem();
-  markerSystem();
+  colonySystem();
   renderSystem();
 };
 
@@ -84,7 +86,7 @@ world.createPrefab('Home', {
   },
 });
 
-for (const _ of [...range(200)]) {
+for (const _ of [...range(50)]) {
   world.createPrefab('Ant', {
     position: {
       x: app.screen.width / 2,

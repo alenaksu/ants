@@ -4,6 +4,6 @@ export default class Home extends Component {
   declare size: number;
 
   static properties = {
-    size: 10,
+    size: 30,
   };
 }

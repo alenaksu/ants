@@ -6,6 +6,13 @@
       "properties": {}
     },
     {
+      "type": "Marker",
+      "properties": {
+        "type": "toFood",
+        "power": 2
+      }
+    },
+    {
       "type": "Position",
       "properties": {
         "x": 100,

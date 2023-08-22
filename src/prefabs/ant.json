@@ -4,8 +4,7 @@
     {
       "type": "Ant",
       "properties": {
-        "state": "exploring",
-        "markerFrequency": 1000
+        "state": "exploring"
       }
     },
     {
@@ -18,7 +17,7 @@
     {
       "type": "Velocity",
       "properties": {
-        "speed": 1
+        "speed": 2
       }
     },
     {

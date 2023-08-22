@@ -6,6 +6,13 @@
       "properties": {}
     },
     {
+      "type": "Marker",
+      "properties": {
+        "type": "toHome",
+        "power": 2
+      }
+    },
+    {
       "type": "Position",
       "properties": {
         "x": 100,

@@ -1,10 +1,13 @@
-import { Graphics } from 'pixi.js';
+import { Sprite, Texture } from "pixi.js";
+import sprite from "../assets/circle_05.png";
 
-export class Home extends Graphics {
-  constructor() {
-    super();
+export class Home extends Sprite {
+    constructor() {
+        super(Texture.from(sprite));
 
-    this.beginFill(0xffff00, 0.6);
-    this.drawCircle(0, 0, 10);
-  }
+        this.anchor.set(0.5);
+        this.tint = 0xffff00;
+        this.width = this.height = 50;
+    }
 }
+

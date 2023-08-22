@@ -13,6 +13,7 @@
     "vite": "^4.4.9"
   },
   "dependencies": {
+    "@pixi/filter-pixelate": "^5.1.1",
     "bitecs": "^0.3.40",
     "geotic": "^4.3.2",
     "pixi.js": "^7.2.4"

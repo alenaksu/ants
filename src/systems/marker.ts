@@ -1,61 +1,53 @@
-import type { World } from 'geotic/src/World';
-import type { Query } from 'geotic/src/Query';
-import { Application } from 'pixi.js';
-import Ant from '../components/Ant';
-import type { Entity } from 'geotic/src/Entity';
-import Marker from '../components/Marker';
+import type { World } from "geotic/src/World";
+import type { Query } from "geotic/src/Query";
+import Ant from "../components/Ant";
+import Marker from "../components/Marker";
+import Food from "../components/Food";
+import Home from "../components/Home";
 
 export default function createMarkerSystem(world: World) {
-  const ants: Query = world.createQuery({
-    all: [Ant],
-  });
-  const markers: Query = world.createQuery({
-    all: [Marker],
-  });
+    const ants: Query = world.createQuery({
+        all: [Ant],
+    });
+    const markers: Query = world.createQuery({
+        all: [Marker],
+        none: [Home, Food],
+    });
 
-  const all: Query = world.createQuery({
-    any: [Ant, Marker],
-  });
+    return () => {
+        for (const entity of ants.get()) {
 
-  const timers = new Map<Entity, number>();
-  all.onEntityAdded((entity: any) => {
-    timers.set(entity, performance.now());
-  });
+            if (entity.ant.state === "exploring") {
+                world.createPrefab("HomeMarker", {
+                    position: {
+                        x: entity.position.x,
+                        y: entity.position.y,
+                    },
+                    marker: {
+                        power: entity.ant.markerPower,
+                    },
+                });
+            } else if (entity.ant.state === "carrying_food") {
+                world.createPrefab("FoodMarker", {
+                    position: {
+                        x: entity.position.x,
+                        y: entity.position.y,
+                    },
+                    marker: {
+                        power: entity.ant.markerPower,
+                    },
+                });
+            }
 
-  all.onEntityRemoved((entity: any) => {
-    timers.delete(entity);
-  });
-
-  return () => {
-    for (const entity of ants.get()) {
-      const lastRelease = timers.get(entity) ?? 0;
-
-      if (performance.now() - lastRelease > entity.ant.markerFrequency) {
-        if (entity.ant.state === 'exploring') {
-          world.createPrefab('HomeMarker', {
-            position: {
-              x: entity.position.x,
-              y: entity.position.y,
-            },
-          });
-        } else if (entity.ant.state === 'carrying_food') {
-          world.createPrefab('FoodMarker', {
-            position: {
-              x: entity.position.x,
-              y: entity.position.y,
-            },
-          });
+            entity.ant.markerPower *= entity.ant.markerPowerRate;
         }
 
-        timers.set(entity, performance.now());
-      }
-    }
+        for (const entity of markers.get()) {
+            entity.marker.power *= entity.marker.decayRate;
 
-    for (const entity of markers.get()) {
-      const creationTime = timers.get(entity) ?? 0;
-      if (performance.now() - creationTime > entity.marker.lifespan) {
-        entity.destroy();
-      }
-    }
-  };
+            if (entity.marker.power <= 1 - entity.marker.decayRate) {
+                entity.destroy();
+            }
+        }
+    };
 }

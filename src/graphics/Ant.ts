@@ -5,6 +5,7 @@ export class Ant extends Graphics {
     super();
 
     this.beginFill(0xff0000);
-    this.drawCircle(0, 0, 5);
+    this.drawRoundedRect(0, 0, 10, 5, 2);
+    this.pivot.set(0.5, 0.5);
   }
 }
