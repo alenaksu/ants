@@ -1,99 +1,45 @@
 import * as PIXI from 'pixi.js';
-import {PixelateFilter} from '@pixi/filter-pixelate';
-import { range } from './utils';
-import { Engine } from 'geotic';
-import Position from './components/Position';
-import { Renderable } from './components/Renderable';
-import Velocity from './components/Velocity';
-import createMovementSystem from './systems/movement';
-import createRenderSystem from './systems/render';
-import antPrefab from './prefabs/ant.json' assert { type: 'json' };
-import foodMarkerPrefab from './prefabs/foodMarker.json' assert { type: 'json' };
-import homeMarkerPrefab from './prefabs/homeMarker.json' assert { type: 'json' };
-import foodPrefab from './prefabs/food.json' assert { type: 'json' };
-import homePrefab from './prefabs/home.json' assert { type: 'json' };
-import Marker from './components/Marker';
-import Ant from './components/Ant';
-import createColonySystem from './systems/colony';
-import Food from './components/Food';
-import Home from './components/Home';
-import Decay from './components/Decay';
-
-export const engine = new Engine();
-engine.registerComponent(Position);
-engine.registerComponent(Renderable);
-engine.registerComponent(Velocity);
-engine.registerComponent(Marker);
-engine.registerComponent(Ant);
-engine.registerComponent(Food);
-engine.registerComponent(Home);
-engine.registerComponent(Decay);
-
-engine.registerPrefab(antPrefab);
-engine.registerPrefab(foodMarkerPrefab);
-engine.registerPrefab(homeMarkerPrefab);
-engine.registerPrefab(foodPrefab);
-engine.registerPrefab(homePrefab);
+import { PixelateFilter } from '@pixi/filter-pixelate';
+import { World } from './components/World';
+import { createAntSystem } from './systems/antSystem';
+import { createMarkerSystem } from './systems/markerSystem';
+import { createInputSystem } from './systems/inputSystem';
 
 const app = new PIXI.Application({
-  background: '#333',
-  resizeTo: window,
+    background: '#333',
+    resizeTo: window,
 });
+app.ticker.speed = 0.3;
 
 // app.stage.filters = [new PixelateFilter(4)];
 
-const world = engine.createWorld();
-const movementSystem = createMovementSystem(world, app);
-const renderSystem = createRenderSystem(world, app);
-const colonySystem = createColonySystem(world, app);
+const config = {
+    antSpeed: 4,
+    smellRange: 50,
+    pause: false,
+    blendMode: PIXI.BLEND_MODES.ADD,
+    showMarkers: true,
+    speed: 1
+};
 
-const render = (dt: number) => {
-  movementSystem();
-  colonySystem();
-  renderSystem();
+const world = new World(app, config);
+const antSystem = createAntSystem(world);
+const markerSystem = createMarkerSystem(world);
+const inputSystem = createInputSystem(world, app, config);
+
+const render: PIXI.TickerCallback<any> = (dt: number) => {
+    inputSystem();
+    antSystem();
+    markerSystem();
 };
 
 app.ticker.maxFPS = 60;
 app.ticker.minFPS = 60;
 app.ticker.add(render);
 
-app.ticker.speed = 10;
-
 document.body.appendChild(app.view as any);
 
-window.addEventListener('contextmenu', (e) => e.preventDefault());
-(app.view as HTMLCanvasElement).addEventListener(
-  'mousemove',
-  (e: MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-
-    if (e.buttons) {
-      world.createPrefab(e.buttons === 1 ? 'Food' : 'Home', {
-        position: {
-          x: e.clientX,
-          y: e.clientY,
-        },
-      });
-    }
-  }
-);
-
-world.createPrefab('Home', {
-  position: {
-    x: app.screen.width / 2,
-    y: app.screen.height / 2,
-  },
+world.createColony(100, {
+    x: app.view.width / 2,
+    y: app.view.height / 2
 });
-
-for (const _ of [...range(50)]) {
-  world.createPrefab('Ant', {
-    position: {
-      x: app.screen.width / 2,
-      y: app.screen.height / 2,
-    },
-    velocity: {
-      direction: Math.PI * 2 * Math.random(),
-    },
-  });
-}
