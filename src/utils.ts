@@ -22,3 +22,5 @@ export const colors  = {
 
   //0xef476f : 0x06d6a0
 }
+
+export const degToRad = (deg: number) => deg * (Math.PI / 180);

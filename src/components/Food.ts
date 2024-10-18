@@ -10,9 +10,8 @@ export class Food extends Graphics {
 
         this.pivot.set(0.5);
 
-        this.beginFill(colors.food);
-        this.drawCircle(0, 0, this.size);
-        this.endFill();
+        this.circle(0, 0, this.size );
+        this.fill(colors.food);
 
         this.setSize(this.size);
     }

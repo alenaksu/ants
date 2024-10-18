@@ -1,18 +1,11 @@
-import { Application, BLEND_MODES, Container, ParticleContainer, Point } from 'pixi.js';
+import { Application, Container, ParticleContainer } from 'pixi.js';
 import { Ant } from './Ant';
 import { Marker } from './Marker';
 import { Home } from './Home';
 import { Food } from './Food';
 import { MarkerMap } from './MarkerMap';
-
-export interface Config {
-    speed: number;
-    antSpeed: number;
-    smellRange: number;
-    pause: boolean;
-    blendMode: BLEND_MODES;
-    showMarkers: boolean;
-}
+import type { BLEND_MODES } from 'pixi.js';
+import { clamp } from '../utils';
 
 export class World {
     ants: Ant[] = [];
@@ -22,26 +15,29 @@ export class World {
     homes: Set<Home> = new Set();
 
     container = new Container();
-    markersContainer: ParticleContainer;
+    markersContainer: Container;
 
     constructor(public app: Application, public config: Config) {
         this.foodMarkerMap = new MarkerMap(app);
         this.homeMarkerMap = new MarkerMap(app);
 
-        this.markersContainer = new ParticleContainer(
-            this.app.view.width * this.app.view.height,
-            {
-                alpha: true,
-                position: false,
-                rotation: false,
-                scale: true,
-                tint: false,
-                uvs: false,
-                vertices: false,
-            },
-            // 20_000,
-            // true
-        );
+        // this.markersContainer = new ParticleContainer({
+        //     width: this.app.screen.width,
+        //     height: this.app.screen.height,
+        //     dynamicProperties: {
+        //         scale: true,
+        //         position: true,
+        //         rotation: true,
+        //         alpha: true,
+        //         tint: false,
+        //         uvs: false,
+        //         vertices: false,
+        //     },
+        // });
+        this.markersContainer = new Container({
+            width: this.app.screen.width,
+            height: this.app.screen.height,
+        });
 
         this.markersContainer.blendMode = config.blendMode;
         app.stage.addChild(this.markersContainer);
@@ -91,10 +87,9 @@ export class World {
                 map.delete(x, y);
             });
 
-            this.markersContainer.addChild(marker);
         } else {
             const marker = map.get(x, y)!;
-            marker.power = marker.power + power;
+            marker.power = clamp(power + marker.power, 0, 2);
         }
 
         return map.get(x, y)!;
@@ -155,7 +150,7 @@ export class World {
         ant.y = y;
         ant.rotation = rotation;
 
-        this.container.addChild(ant);
+        this.markersContainer.addChild(ant);
 
         return ant;
     }

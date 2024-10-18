@@ -1,4 +1,4 @@
-import { Application, BLEND_MODES } from 'pixi.js';
+import { Application } from 'pixi.js';
 import { Config, World } from '../components/World';
 import { Pane } from 'tweakpane';
 
@@ -17,8 +17,8 @@ export const createInputSystem = (world: World, app: Application, config: Config
         }
     };
 
-    (app.view as HTMLCanvasElement).addEventListener('mousemove', drop);
-    (app.view as HTMLCanvasElement).addEventListener('mousedown', drop);
+    (app.canvas as HTMLCanvasElement).addEventListener('mousemove', drop);
+    (app.canvas as HTMLCanvasElement).addEventListener('mousedown', drop);
 
     const pane = new Pane();
     pane.addBinding(config, 'antSpeed', {
@@ -61,13 +61,13 @@ export const createInputSystem = (world: World, app: Application, config: Config
         view: 'separator',
     });
 
-    pane.addBinding(config, 'blendMode', {
-        label: 'Blend mode',
-        options: BLEND_MODES,
-        value: BLEND_MODES.ADD,
-    }).on('change', (e) => {
-        world.markersContainer.blendMode = e.value;
-    });
+    // pane.addBinding(config, 'blendMode', {
+    //     label: 'Blend mode',
+    //     options: BLEND_MODES,
+    //     value: BLEND_MODES.ADD,
+    // }).on('change', (e) => {
+    //     world.markersContainer.blendMode = e.value;
+    // });
 
     return () => {};
 };

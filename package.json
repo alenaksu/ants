@@ -9,15 +9,14 @@
     "preview": "vite preview"
   },
   "devDependencies": {
-    "@tweakpane/core": "^2.0.0",
-    "typescript": "^5.0.2",
-    "vite": "^4.4.9"
+    "@tweakpane/core": "^2.0.4",
+    "typescript": "^5.6.3",
+    "vite": "^5.4.8"
   },
   "dependencies": {
     "@pixi/filter-pixelate": "^5.1.1",
     "bitecs": "^0.3.40",
-    "geotic": "^4.3.2",
-    "pixi.js": "^7.2.4",
-    "tweakpane": "^4.0.0"
+    "pixi.js": "^8.5.0",
+    "tweakpane": "^4.0.4"
   }
 }

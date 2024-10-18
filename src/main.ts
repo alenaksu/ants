@@ -1,45 +1,47 @@
 import * as PIXI from 'pixi.js';
-import { PixelateFilter } from '@pixi/filter-pixelate';
-import { World } from './components/World';
+import { Config, World } from './components/World';
 import { createAntSystem } from './systems/antSystem';
 import { createMarkerSystem } from './systems/markerSystem';
 import { createInputSystem } from './systems/inputSystem';
+import defaultConfig from './config';
+import { Application } from 'pixi.js';
 
-const app = new PIXI.Application({
+const app = new Application();
+await app.init({
     background: '#333',
     resizeTo: window,
 });
-app.ticker.speed = 0.3;
 
 // app.stage.filters = [new PixelateFilter(4)];
 
-const config = {
-    antSpeed: 4,
+const config: Config = {
+    ...defaultConfig,
+    antSpeed: 1,
     smellRange: 50,
     pause: false,
-    blendMode: PIXI.BLEND_MODES.ADD,
+    blendMode: 'add',
     showMarkers: true,
-    speed: 1
+    speed: 1,
 };
 
 const world = new World(app, config);
 const antSystem = createAntSystem(world);
-const markerSystem = createMarkerSystem(world);
+const markerSystem = await createMarkerSystem(world);
 const inputSystem = createInputSystem(world, app, config);
 
-const render: PIXI.TickerCallback<any> = (dt: number) => {
+const render: PIXI.TickerCallback<any> = (ticker) => {
     inputSystem();
     antSystem();
     markerSystem();
 };
 
-app.ticker.maxFPS = 60;
-app.ticker.minFPS = 60;
+app.ticker.maxFPS = 30;
+app.ticker.minFPS = 30;
 app.ticker.add(render);
 
-document.body.appendChild(app.view as any);
+document.body.appendChild(app.canvas as any);
 
 world.createColony(100, {
-    x: app.view.width / 2,
-    y: app.view.height / 2
+    x: app.screen.width / 2,
+    y: app.screen.height / 2,
 });

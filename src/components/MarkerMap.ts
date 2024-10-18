@@ -7,7 +7,7 @@ export class MarkerMap {
     constructor(private app: Application) {}
 
     private getIndex(x: number, y: number) {
-        return y * this.app.view.width + x;
+        return Math.floor(y) * this.app.screen.width + Math.floor(x);
     }
 
     set(x: number, y: number, value: Marker): this {
