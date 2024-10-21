@@ -1,11 +1,11 @@
-import { Application, Container, ParticleContainer } from 'pixi.js';
+import { Application, Container } from 'pixi.js';
 import { Ant } from './Ant';
 import { Marker } from './Marker';
 import { Home } from './Home';
 import { Food } from './Food';
 import { MarkerMap } from './MarkerMap';
-import type { BLEND_MODES } from 'pixi.js';
 import { clamp } from '../utils';
+import { Config } from '../types';
 
 export class World {
     ants: Ant[] = [];
@@ -15,32 +15,17 @@ export class World {
     homes: Set<Home> = new Set();
 
     container = new Container();
-    markersContainer: Container;
+
+    foodMap!: number[];
+    homeMap!: number[];
 
     constructor(public app: Application, public config: Config) {
         this.foodMarkerMap = new MarkerMap(app);
         this.homeMarkerMap = new MarkerMap(app);
 
-        // this.markersContainer = new ParticleContainer({
-        //     width: this.app.screen.width,
-        //     height: this.app.screen.height,
-        //     dynamicProperties: {
-        //         scale: true,
-        //         position: true,
-        //         rotation: true,
-        //         alpha: true,
-        //         tint: false,
-        //         uvs: false,
-        //         vertices: false,
-        //     },
-        // });
-        this.markersContainer = new Container({
-            width: this.app.screen.width,
-            height: this.app.screen.height,
-        });
+        this.foodMap = Array(app.screen.width * app.screen.height * 4).fill(0);
+        this.homeMap = Array(app.screen.width * app.screen.height * 4).fill(0);
 
-        this.markersContainer.blendMode = config.blendMode;
-        app.stage.addChild(this.markersContainer);
         app.stage.addChild(this.container);
     }
 
@@ -69,30 +54,60 @@ export class World {
         }: Pick<Marker, 'x' | 'y' | 'power'> &
             Partial<Pick<Marker, 'power' | 'evaporationRate' | 'permanent'>>
     ) {
-        const map = type === 'food' ? this.foodMarkerMap : this.homeMarkerMap;
+        const markerMap = type === 'food' ? this.foodMarkerMap : this.homeMarkerMap;
+        const map = type === 'food' ? this.foodMap : this.homeMap;
 
-        if (!map.has(x, y)) {
-            const marker = new Marker(this, this.app, type);
-            marker.x = x;
-            marker.y = y;
-            marker.power = power ?? marker.permanent;
-            marker.visible = this.config.showMarkers;
+        if (permanent) {
+            // TODO: markers should not be stored in these maps
+            if (!markerMap.has(x, y)) {
+                const marker = new Marker(this, this.app, type);
+                marker.x = x;
+                marker.y = y;
+                marker.power = power ?? marker.permanent;
+                marker.visible = this.config.marker.show;
 
-            marker.permanent = permanent ?? marker.permanent;
-            marker.evaporationRate = evaporationRate ?? marker.evaporationRate;
+                marker.permanent = permanent ?? marker.permanent;
+                marker.evaporationRate = evaporationRate ?? marker.evaporationRate;
 
-            map.set(x, y, marker);
+                markerMap.set(x, y, marker);
 
-            marker.on('destroyed', () => {
-                map.delete(x, y);
-            });
+                marker.on('destroyed', () => {
+                    markerMap.delete(x, y);
+                });
 
+                this.drawMarkerOnMap(marker);
+            } else {
+                const marker = markerMap.get(x, y)!;
+                marker.power = clamp(power + marker.power, 0, 2);
+            }
         } else {
-            const marker = map.get(x, y)!;
-            marker.power = clamp(power + marker.power, 0, 2);
+            this.drawMarkerOnMap({
+                x,
+                y,
+                power: power ?? 0,
+                type
+            })
         }
 
-        return map.get(x, y)!;
+
+
+        return markerMap.get(x, y)!;
+    }
+
+    drawMarkerOnMap(marker: Pick<Marker, 'type' | 'x' | 'y' | 'power'>, radius = 1) {
+        const map = marker.type === 'food' ? this.foodMap : this.homeMap;
+        for (let dx = -radius; dx <= radius; dx++) {
+            for (let dy = -radius; dy <= radius; dy++) {
+                const x = Math.floor(marker.x) + dx;
+                const y = Math.floor(marker.y) + dy;
+
+                const index = (y * this.app.screen.width + x);
+
+                if (index >= 0 && index < map.length) {
+                    map[index] = clamp(marker.power + map[index], 0, 10);
+                }
+            }
+        }
     }
 
     createFood({ x, y }: { x: number; y: number }) {
@@ -104,7 +119,7 @@ export class World {
         const marker = this.createMarker('food', {
             x,
             y,
-            power: Infinity,
+            power: 10,
             permanent: true,
         });
 
@@ -130,7 +145,7 @@ export class World {
         const marker = this.createMarker('home', {
             x,
             y,
-            power: Infinity,
+            power: 10,
             permanent: true,
         });
 
@@ -150,7 +165,7 @@ export class World {
         ant.y = y;
         ant.rotation = rotation;
 
-        this.markersContainer.addChild(ant);
+        this.container.addChild(ant);
 
         return ant;
     }
@@ -169,11 +184,53 @@ export class World {
                 y,
                 rotation: Math.PI * 2 * Math.random(),
             });
-            ant.speed = this.config.antSpeed;
-            ant.smellRange = this.config.smellRange;
+            ant.speed = this.config.ant.speed;
+            ant.smellRange = this.config.ant.smellRange;
 
             return ant;
         });
         this.ants = ants;
+    }
+
+    evaporateMarkers() {
+        for (const marker of this.markers) {
+            if (marker.permanent) {
+                this.drawMarkerOnMap(marker);
+            }
+        }
+    }
+
+    dissipateMarkers() {
+        for (const map of [this.foodMap, this.homeMap]) {
+            const width = this.app.screen.width;
+            const height = this.app.screen.height;
+            const config = this.config;
+
+            const currentMap = Array.from(map);
+            for (let x = 0; x < width; x++) {
+                for (let y = 0; y < height; y++) {
+                    const index = (y * width + x);
+                    const radius = 1;
+
+                    let average = currentMap[index];
+
+                    for (let dx = -radius; dx <= radius; dx++) {
+                        for (let dy = -radius; dy <= radius; dy++) {
+                            const nx = x + dx;
+                            const ny = y + dy;
+                            const neighborIndex = (ny * width + nx);
+
+                            average += currentMap[neighborIndex] ?? 0;
+                        }
+                    }
+
+                    const total = (radius * 2 + 1) ** 2 + 1;
+                    map[index] = (average / total) * config.marker.evaporationRate;
+                    if (map[index] < config.marker.evaporationThreshold) {
+                        map[index] = 0;
+                    }
+                }
+            }
+        }
     }
 }

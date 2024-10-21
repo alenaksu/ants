@@ -1,6 +1,7 @@
 import { Application } from 'pixi.js';
-import { Config, World } from '../components/World';
+import { World } from '../components/World';
 import { Pane } from 'tweakpane';
+import { Config } from '../types';
 
 export const createInputSystem = (world: World, app: Application, config: Config) => {
     window.addEventListener('contextmenu', (e) => e.preventDefault());
@@ -9,10 +10,15 @@ export const createInputSystem = (world: World, app: Application, config: Config
         e.preventDefault();
         e.stopPropagation();
 
+        
+        const bounds = app.canvas.getBoundingClientRect();
+        const yScale = app.screen.height / app.canvas.clientHeight;
+        const xScale = app.screen.width / app.canvas.clientWidth;
+
         if (e.buttons) {
             world[e.buttons === 1 ? 'createFood' : 'createHome']({
-                x: e.clientX,
-                y: e.clientY,
+                x: e.x * xScale - bounds.left,
+                y: e.y * yScale - bounds.top,
             });
         }
     };
@@ -21,32 +27,37 @@ export const createInputSystem = (world: World, app: Application, config: Config
     (app.canvas as HTMLCanvasElement).addEventListener('mousedown', drop);
 
     const pane = new Pane();
-    pane.addBinding(config, 'antSpeed', {
+    const antsConfig = pane.addFolder({
+        title: 'Ants',
+    })
+
+    antsConfig.addBinding(config.ant, 'speed', {
         min: 0,
         max: 10,
         step: 1,
-        label: 'Ant speed',
+        label: 'Speed',
     }).on('change', (e) => {
         for (const ant of world.ants) {
             ant.speed = e.value;
         }
     });
 
-    pane.addBinding(config, 'smellRange', {
+    antsConfig.addBinding(config.ant, 'smellRange', {
         min: 1,
         max: 500,
         step: 1,
-        label: 'Ant smell range',
+        label: 'Smell range',
     }).on('change', (e) => {
         for (const ant of world.ants) {
             ant.smellRange = e.value;
         }
     });
 
-    pane.addBinding(config, 'showMarkers', { label: 'Show markers' }).on('change', (e) => {
-        for (const marker of world.markers) {
-            marker.visible = e.value;
-        }
+    const markersConfig = pane.addFolder({
+        title: 'Markers',
+    });
+    markersConfig.addBinding(config.marker, 'show', { label: 'Show/Hide' }).on('change', (e) => {
+        config.marker.show = e.value as boolean;
     });
 
     pane.addBinding(config, 'pause').on('change', (e) => {
@@ -57,10 +68,6 @@ export const createInputSystem = (world: World, app: Application, config: Config
         }
     });
 
-    pane.addBlade({
-        view: 'separator',
-    });
-
     // pane.addBinding(config, 'blendMode', {
     //     label: 'Blend mode',
     //     options: BLEND_MODES,
@@ -69,5 +76,5 @@ export const createInputSystem = (world: World, app: Application, config: Config
     //     world.markersContainer.blendMode = e.value;
     // });
 
-    return () => {};
+    return () => { };
 };

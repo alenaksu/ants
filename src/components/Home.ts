@@ -13,7 +13,7 @@ export class Home extends Graphics {
     }
 
     get size() {
-        return 50;
+        return 20;
     }
 }
 

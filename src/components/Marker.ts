@@ -53,11 +53,6 @@ export class Marker extends Sprite {
     evaporate() {
         if (this.permanent) return;
 
-        // console.log('evaporate', {
-        //     from: this.power,
-        //     to: this.power * this.evaporationRate,
-        // });
-
         this.power *= this.evaporationRate;
 
         this.alpha = this.visible ? clamp(this.power, 0, 1) : 0;

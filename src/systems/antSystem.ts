@@ -1,5 +1,3 @@
-import { Ant } from '../components/Ant';
-import { Marker } from '../components/Marker';
 import { World } from '../components/World';
 
 export const createAntSystem = (world: World) => {
@@ -30,8 +28,16 @@ export const createAntSystem = (world: World) => {
                 }
             }
 
-            let strongestMarker: any;
-            const map = ant.isCarryingFood() ? world.homeMarkerMap : world.foodMarkerMap;
+            let strongestMarker: {
+                x: number;
+                y: number;
+                power: number;
+            } = {
+                x: 0,
+                y: 0,
+                power: 0,
+            };
+            const map = ant.isCarryingFood() ? world.homeMap : world.foodMap;
 
             const antX = Math.floor(ant.x);
             const antY = Math.floor(ant.y);
@@ -42,31 +48,29 @@ export const createAntSystem = (world: World) => {
                 for (let x = antX - halfSmellRange; x < antX + halfSmellRange; x++) {
                     if (antY === y && antX === x) continue;
 
-                    const marker = map.get(x, y);
-
-                    if (!marker || marker.destroyed || !marker.power) continue;
-
                     const angle = Math.abs(
-                        (Math.atan2(marker.y - ant.y, marker.x - ant.x) - ant.rotation) %
-                            (2 * Math.PI)
+                        (Math.atan2(y - ant.y, x - ant.x) - ant.rotation) %
+                        (2 * Math.PI)
                     );
-                    const inRange = angle < antHalfSmellAngle;
+
+                    const inRange = angle > -antHalfSmellAngle && angle < antHalfSmellAngle;
                     // console.log((angle * 180) / Math.PI, angle, inRange);
 
-                    if (
-                        inRange &&
-                        ((ant.isForaging() && marker.type === 'food') ||
-                            (ant.isCarryingFood() && marker.type === 'home'))
-                    ) {
+                    if (inRange) {
+                        const index = y * world.app.screen.width + x;
                         strongestMarker =
-                            strongestMarker && strongestMarker.power > marker.power
+                            strongestMarker.power > map[index]
                                 ? strongestMarker
-                                : marker;
+                                : {
+                                    x,
+                                    y,
+                                    power: map[index],
+                                };
                     }
                 }
             }
 
-            if (strongestMarker) {
+            if (strongestMarker.power > world.config.marker.evaporationThreshold) {
                 ant.rotation = Math.atan2(strongestMarker.y - ant.y, strongestMarker.x - ant.x);
             } else {
                 ant.applyRotationNoise();

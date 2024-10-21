@@ -15,12 +15,14 @@ export const calculateDistance = (
     return Math.sqrt(dx ** 2 + dy ** 2);
 };
 
-export const colors  = {
-  ant: 0xe76f51,
-  food: 0x06d6a0,
-  home: 0xef476f
+export const colors = {
+    ant: 0xe76f51,
+    food: 0x06d6a0,
+    home: 0xef476f
 
-  //0xef476f : 0x06d6a0
+    //0xef476f : 0x06d6a0
 }
 
 export const degToRad = (deg: number) => deg * (Math.PI / 180);
+
+export const lerp = (value: number, start: number, end: number) => (end - start) * value + start;

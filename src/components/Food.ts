@@ -3,7 +3,7 @@ import { World } from './World';
 import { colors } from '../utils';
 
 export class Food extends Graphics {
-    size = 50;
+    size = 20;
 
     constructor(public world: World, public app: Application) {
         super();

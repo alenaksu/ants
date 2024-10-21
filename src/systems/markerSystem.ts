@@ -1,34 +1,66 @@
-import { Sprite, Texture } from 'pixi.js';
+import { Sprite, Texture, TextureSource, createTexture } from 'pixi.js';
 import { World } from '../components/World';
+import { Config, System } from '../types';
+import { colors, lerp } from '../utils';
 
-export const createMarkerSystem = async (world: World) => {
-    const textureData = new ImageData(world.app.screen.width, world.app.screen.height);
-    const texture = Texture.from({
-        width: world.app.screen.width,
-        height: world.app.screen.height,
-        resource: await createImageBitmap(textureData),
-    });
+const createSprite = (world: World): [Sprite, Uint8ClampedArray] => {
+    const width = world.app.screen.width;
+    const height = world.app.screen.height;
+
+    const textureData = new Uint8ClampedArray(width * height * 4);
+
+    const texture = Texture.from(TextureSource.from({
+        width: width,
+        height: height,
+        resource: textureData,
+        scaleMode: 'nearest',
+        antialias: false
+    }));
+
     const sprite = new Sprite({
-        x: 0,
-        y: 0,
-        width: world.app.screen.width,
-        height: world.app.screen.height,
-        texture,
+        width: width,
+        height: height,
+        texture: texture,
+        blendMode: 'add',
+        zIndex: -1,
     });
 
-    world.app.stage.addChild(sprite);
-    return () => {
-        for (const marker of world.markers) {
-            if (marker) {
-                const index =
-                    Math.floor(marker.y) * world.app.screen.width + Math.floor(marker.x) * 4;
+    return [sprite, textureData];
+}
 
-                textureData.data[index] = (marker.tint >> 16) & 0xff;
-                textureData.data[index + 1] = (marker.tint >> 8) & 0xff;
-                textureData.data[index + 2] = marker.tint & 0xff;
-                textureData.data[index + 3] = 255;
-            }
+export const createMarkerSystem: System = async (world: World, config: Config) => {
+    const [spriteHome, homeData] = createSprite(world);
+    const [spriteFood, foodData] = createSprite(world);
+
+    world.app.stage.addChild(spriteHome);
+    world.app.stage.addChild(spriteFood);
+
+    let lastTime = 0;
+
+    return (ticker) => {
+        world.evaporateMarkers();
+        world.dissipateMarkers();
+
+        const alpha = 0x00;
+        for (let i = 0; i < world.homeMap.length; i++) {
+            const index = i * 4;
+            homeData[index] = lerp(world.homeMap[i], 0, colors.home >> 16 & 0xff);
+            homeData[index + 1] = lerp(world.homeMap[i], 0, colors.home >> 8 & 0xff);
+            homeData[index + 2] = lerp(world.homeMap[i], 0, colors.home & 0xff);
+            homeData[index + 3] = alpha;
         }
-        texture.update();
+
+        for (let i = 0; i < world.foodMap.length; i++) {
+            const index = i * 4;
+            foodData[index] = lerp(world.foodMap[i], 0, colors.food >> 16 & 0xff);
+            foodData[index + 1] = lerp(world.foodMap[i], 0, colors.food >> 8 & 0xff);
+            foodData[index + 2] = lerp(world.foodMap[i], 0, colors.food & 0xff);
+            foodData[index + 3] = alpha;
+        }
+
+        spriteHome.texture.source.update();
+        spriteFood.texture.source.update();
+        spriteHome.texture.update();
+        spriteFood.texture.update();
     };
 };

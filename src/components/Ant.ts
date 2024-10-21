@@ -22,7 +22,7 @@ export class Ant extends Graphics {
 
         this.pivot.set(0, 0.5);
 
-        this.roundRect(0, -2.5, 10, 5, 2);
+        this.roundRect(0, -1.25, 5, 2.5, 1);
         this.fill(0xffffff);
         this.dropFood();
     }
