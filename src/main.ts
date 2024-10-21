@@ -10,8 +10,8 @@ import { Config } from './types';
 const app = new Application();
 await app.init({
     background: '#111',
-    width: 300,
-    height: 300,
+    width: 800,
+    height: 800,
     resolution: 1,
     // resizeTo: window,
 });
@@ -23,13 +23,13 @@ const config: Config = {
 };
 
 const world = new World(app, config);
-const antSystem = createAntSystem(world);
+const antSystem = await createAntSystem(world, config);
 const markerSystem = await createMarkerSystem(world, config);
-const inputSystem = createInputSystem(world, app, config);
+const inputSystem = await createInputSystem(world, config);
 
 const render: PIXI.TickerCallback<any> = (ticker) => {
-    inputSystem();
-    antSystem();
+    inputSystem(ticker);
+    antSystem(ticker);
     markerSystem(ticker);
 };
 

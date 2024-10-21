@@ -1,6 +1,7 @@
 import { World } from '../components/World';
+import { System } from '../types';
 
-export const createAntSystem = (world: World) => {
+export const createAntSystem: System = (world: World) => {
     return () => {
         for (const ant of world.ants) {
             for (const food of world.foods) {
@@ -37,7 +38,7 @@ export const createAntSystem = (world: World) => {
                 y: 0,
                 power: 0,
             };
-            const map = ant.isCarryingFood() ? world.homeMap : world.foodMap;
+            const map = ant.isCarryingFood() ? world.homeMarkerMap : world.foodMarkerMap;
 
             const antX = Math.floor(ant.x);
             const antY = Math.floor(ant.y);
@@ -49,23 +50,22 @@ export const createAntSystem = (world: World) => {
                     if (antY === y && antX === x) continue;
 
                     const angle = Math.abs(
-                        (Math.atan2(y - ant.y, x - ant.x) - ant.rotation) %
-                        (2 * Math.PI)
+                        (Math.atan2(y - ant.y, x - ant.x) - ant.rotation) % (2 * Math.PI)
                     );
 
                     const inRange = angle > -antHalfSmellAngle && angle < antHalfSmellAngle;
                     // console.log((angle * 180) / Math.PI, angle, inRange);
 
                     if (inRange) {
-                        const index = y * world.app.screen.width + x;
+                        const marker = map.get(x, y);
                         strongestMarker =
-                            strongestMarker.power > map[index]
+                            strongestMarker.power > marker
                                 ? strongestMarker
                                 : {
-                                    x,
-                                    y,
-                                    power: map[index],
-                                };
+                                      x,
+                                      y,
+                                      power: marker,
+                                  };
                     }
                 }
             }

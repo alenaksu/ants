@@ -15,6 +15,7 @@ export default {
         evaporationRate: 0.996,
         evaporationThreshold: 0.01,
         power: 1,
+        maxPower: 10,
         show: true
     },
     pause: false

@@ -1,4 +1,4 @@
-import { Ticker } from "pixi.js";
+import { Ticker, TickerCallback } from "pixi.js";
 import { World } from "./components/World";
 
 export interface Config {
@@ -15,15 +15,12 @@ export interface Config {
         evaporationRate: number;
         evaporationThreshold: number;
         power: number;
+        maxPower: number;
         show: boolean;
     };
     pause: boolean;
 }
 
-export interface TickerFunction {
-    (ticker: Ticker): void | Promise<void>;
-}
-
 export interface System {
-    (world: World, config: Config): TickerFunction | Promise<TickerFunction>;
+    (world: World, config: Config): TickerCallback<void> | Promise<TickerCallback<void>>;
 }

@@ -23,6 +23,7 @@ export class Ant extends Graphics {
         this.pivot.set(0, 0.5);
 
         this.roundRect(0, -1.25, 5, 2.5, 1);
+        this.stroke(0x000000);
         this.fill(0xffffff);
         this.dropFood();
     }

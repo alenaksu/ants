@@ -1,16 +1,15 @@
-import { Application } from 'pixi.js';
 import { World } from '../components/World';
 import { Pane } from 'tweakpane';
-import { Config } from '../types';
+import { Config, System } from '../types';
 
-export const createInputSystem = (world: World, app: Application, config: Config) => {
+export const createInputSystem: System = (world: World, config: Config) => {
     window.addEventListener('contextmenu', (e) => e.preventDefault());
 
+    const app = world.app;
     const drop = (e: MouseEvent) => {
         e.preventDefault();
         e.stopPropagation();
 
-        
         const bounds = app.canvas.getBoundingClientRect();
         const yScale = app.screen.height / app.canvas.clientHeight;
         const xScale = app.screen.width / app.canvas.clientWidth;
