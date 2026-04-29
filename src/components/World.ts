@@ -1,18 +1,11 @@
-import { Application, BLEND_MODES, Container, ParticleContainer, Point } from 'pixi.js';
+import { Application, Container } from 'pixi.js';
 import { Ant } from './Ant';
 import { Marker } from './Marker';
 import { Home } from './Home';
 import { Food } from './Food';
 import { MarkerMap } from './MarkerMap';
-
-export interface Config {
-    speed: number;
-    antSpeed: number;
-    smellRange: number;
-    pause: boolean;
-    blendMode: BLEND_MODES;
-    showMarkers: boolean;
-}
+import { Config } from '../types';
+import { colors } from '../utils';
 
 export class World {
     ants: Ant[] = [];
@@ -22,30 +15,36 @@ export class World {
     homes: Set<Home> = new Set();
 
     container = new Container();
-    markersContainer: ParticleContainer;
 
     constructor(public app: Application, public config: Config) {
-        this.foodMarkerMap = new MarkerMap(app);
-        this.homeMarkerMap = new MarkerMap(app);
+        this.foodMarkerMap = new MarkerMap(app, config, colors.food);
+        this.homeMarkerMap = new MarkerMap(app, config, colors.home);
 
-        this.markersContainer = new ParticleContainer(
-            this.app.view.width * this.app.view.height,
-            {
-                alpha: true,
-                position: false,
-                rotation: false,
-                scale: true,
-                tint: false,
-                uvs: false,
-                vertices: false,
-            },
-            // 20_000,
-            // true
-        );
-
-        this.markersContainer.blendMode = config.blendMode;
-        app.stage.addChild(this.markersContainer);
+        app.stage.addChild(this.foodMarkerMap.mapSprite);
+        app.stage.addChild(this.homeMarkerMap.mapSprite);
         app.stage.addChild(this.container);
+    }
+
+    reset() {
+        // Destroy all entities
+        this.ants.forEach(ant => ant.destroy());
+        this.ants = [];
+        this.foods.forEach(food => food.destroy());
+        this.foods.clear();
+        this.homes.forEach(home => home.destroy());
+        this.homes.clear();
+
+        // Remove old marker sprites from stage, dispose GPU resources
+        this.app.stage.removeChild(this.foodMarkerMap.mapSprite);
+        this.app.stage.removeChild(this.homeMarkerMap.mapSprite);
+        this.foodMarkerMap.dispose();
+        this.homeMarkerMap.dispose();
+
+        // Create new marker maps at current app.screen dimensions
+        this.foodMarkerMap = new MarkerMap(this.app, this.config, colors.food);
+        this.homeMarkerMap = new MarkerMap(this.app, this.config, colors.home);
+        this.app.stage.addChild(this.foodMarkerMap.mapSprite);
+        this.app.stage.addChild(this.homeMarkerMap.mapSprite);
     }
 
     *getMarkers() {
@@ -62,42 +61,11 @@ export class World {
         return this.getMarkers();
     }
 
-    createMarker(
-        type: 'food' | 'home',
-        {
-            x,
-            y,
-            power,
-            evaporationRate,
-            permanent,
-        }: Pick<Marker, 'x' | 'y' | 'power'> &
-            Partial<Pick<Marker, 'power' | 'evaporationRate' | 'permanent'>>
-    ) {
-        const map = type === 'food' ? this.foodMarkerMap : this.homeMarkerMap;
+    createMarker(type: 'food' | 'home', { x, y, power }: Pick<Marker, 'x' | 'y' | 'power'>) {
+        const markerMap = type === 'food' ? this.foodMarkerMap : this.homeMarkerMap;
+        markerMap.releaseMarker(x, y, power ?? 0);
 
-        if (!map.has(x, y)) {
-            const marker = new Marker(this, this.app, type);
-            marker.x = x;
-            marker.y = y;
-            marker.power = power ?? marker.permanent;
-            marker.visible = this.config.showMarkers;
-
-            marker.permanent = permanent ?? marker.permanent;
-            marker.evaporationRate = evaporationRate ?? marker.evaporationRate;
-
-            map.set(x, y, marker);
-
-            marker.on('destroyed', () => {
-                map.delete(x, y);
-            });
-
-            this.markersContainer.addChild(marker);
-        } else {
-            const marker = map.get(x, y)!;
-            marker.power = marker.power + power;
-        }
-
-        return map.get(x, y)!;
+        return markerMap.get(x, y)!;
     }
 
     createFood({ x, y }: { x: number; y: number }) {
@@ -106,19 +74,8 @@ export class World {
         food.y = y;
         this.foods.add(food);
 
-        const marker = this.createMarker('food', {
-            x,
-            y,
-            power: Infinity,
-            permanent: true,
-        });
-
         food.on('destroyed', () => {
             this.foods.delete(food);
-
-            if (!marker.destroyed) {
-                marker.destroy();
-            }
         });
 
         this.container.addChild(food);
@@ -132,16 +89,8 @@ export class World {
         home.y = y;
         this.homes.add(home);
 
-        const marker = this.createMarker('home', {
-            x,
-            y,
-            power: Infinity,
-            permanent: true,
-        });
-
         home.on('destroyed', () => {
             this.homes.delete(home);
-            marker.destroy();
         });
 
         this.container.addChild(home);
@@ -174,8 +123,8 @@ export class World {
                 y,
                 rotation: Math.PI * 2 * Math.random(),
             });
-            ant.speed = this.config.antSpeed;
-            ant.smellRange = this.config.smellRange;
+            ant.speed = this.config.ant.speed;
+            ant.smellRange = this.config.ant.smellRange;
 
             return ant;
         });

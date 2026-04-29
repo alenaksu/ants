@@ -3,16 +3,15 @@ import { World } from './World';
 import { colors } from '../utils';
 
 export class Food extends Graphics {
-    size = 50;
+    size = 20;
 
     constructor(public world: World, public app: Application) {
         super();
 
         this.pivot.set(0.5);
 
-        this.beginFill(colors.food);
-        this.drawCircle(0, 0, this.size);
-        this.endFill();
+        this.circle(0, 0, this.size );
+        this.fill(colors.food);
 
         this.setSize(this.size);
     }

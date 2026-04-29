@@ -1,15 +1,17 @@
 import { Application, Graphics } from 'pixi.js';
 import { World } from './World';
 import { clamp, colors } from '../utils';
+import defaultConfig from '../config';
 
 export class Ant extends Graphics {
     antState: 'foraging' | 'carrying_food' = 'foraging';
-    markerPowerRate = 0.998;
-    markerPower = 1;
-    smellRange = 20;
-    speed = 1;
-    rotationNoise = Math.PI / 6;
-    releaseRate = 1;
+    markerPowerRate = defaultConfig.ant.markerPowerRate;
+    markerPower = defaultConfig.ant.markerPower;
+    smellRange = defaultConfig.ant.smellRange;
+    smellAngle = defaultConfig.ant.smellAngle;
+    speed = defaultConfig.ant.speed;
+    rotationNoise = defaultConfig.ant.rotationNoise;
+    releaseRate = defaultConfig.ant.releaseRate;
     lastRelease = 0;
 
     lastX: number = this.x;
@@ -20,9 +22,9 @@ export class Ant extends Graphics {
 
         this.pivot.set(0, 0.5);
 
-        this.beginFill(0xffffff);
-        this.drawRoundedRect(0, -2.5, 10, 5, 2);
-        this.endFill();
+        this.roundRect(0, -1.25, 5, 2.5, 1);
+        this.stroke(0x000000);
+        this.fill(0xffffff);
         this.dropFood();
     }
 
@@ -72,18 +74,29 @@ export class Ant extends Graphics {
     }
 
     releaseMarker() {
-        if (this.x === this.lastX && this.y === this.lastY) return;
+        const x = Math.floor(this.x);
+        const y = Math.floor(this.y);
+        const lastX = Math.floor(this.lastX);
+        const lastY = Math.floor(this.lastY);
+
+        if (x === lastX && y === lastY) return;
         if (++this.lastRelease < this.releaseRate) return;
 
         const world = this.world;
 
         const marker = world.createMarker(this.antState === 'foraging' ? 'home' : 'food', {
-            x: Math.round(this.x),
-            y: Math.round(this.y),
+            x,
+            y,
             power: this.markerPower,
         });
 
-        this.markerPower *= this.markerPowerRate * this.releaseRate;
+        // console.log('release', {
+        //     x,
+        //     y,
+        //     power: this.markerPower,
+        // });
+
+        this.markerPower *= this.markerPowerRate;
         this.lastRelease = 0;
 
         return marker;

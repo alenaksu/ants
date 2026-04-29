@@ -1,105 +1,65 @@
-import { Ant } from '../components/Ant';
-import { Marker } from '../components/Marker';
 import { World } from '../components/World';
+import { System } from '../types';
 
-export const createAntSystem = (world: World) => {
-    const visited = new WeakMap<Ant, Set<Marker>>();
-
+export const createAntSystem: System = (world: World) => {
     return () => {
         for (const ant of world.ants) {
-            if (!visited.has(ant)) {
-                visited.set(ant, new Set());
-            }
-
-            const visitedMarkers = visited.get(ant)!;
-
+            // Food collision
             for (const food of world.foods) {
-                if (food.containsPoint(ant)) {
+                if (food.getBounds().containsPoint(ant.x, ant.y)) {
                     if (ant.isForaging()) {
                         ant.pickFood();
                         ant.rotation += Math.PI;
                         food.consume();
-                        visitedMarkers.clear();
                     }
-
                     ant.resetMarkerPower();
                     break;
                 }
             }
 
+            // Home collision
             for (const home of world.homes) {
-                if (home.containsPoint(ant)) {
+                if (home.getBounds().containsPoint(ant.x, ant.y)) {
                     if (ant.isCarryingFood()) {
                         ant.dropFood();
                         ant.rotation += Math.PI;
-                        visitedMarkers.clear();
                     }
-
                     ant.resetMarkerPower();
                     break;
                 }
             }
 
-            let strongestMarker: any;
+            // Pheromone sensing: 3 directional probes at smellRange distance
+            // Left probe, center probe, right probe — spaced by smellAngle/2
             const map = ant.isCarryingFood() ? world.homeMarkerMap : world.foodMarkerMap;
-            const halfSmellRange = Math.round(ant.smellRange / 2);
+            const rot = ant.rotation;
+            const dist = ant.smellRange;
+            const spread = ant.smellAngle / 2;
 
-            const antX = Math.round(ant.x);
-            const antY = Math.round(ant.y);
+            const probeL = map.get(
+                ant.x + Math.cos(rot - spread) * dist,
+                ant.y + Math.sin(rot - spread) * dist
+            );
+            const probeC = map.get(
+                ant.x + Math.cos(rot) * dist,
+                ant.y + Math.sin(rot) * dist
+            );
+            const probeR = map.get(
+                ant.x + Math.cos(rot + spread) * dist,
+                ant.y + Math.sin(rot + spread) * dist
+            );
 
-            for (let y = antY - halfSmellRange; y < antY + halfSmellRange; y++) {
-                for (let x = antX - halfSmellRange; x < antX + halfSmellRange; x++) {
-                    if (antY === y && antX === x) continue;
+            const threshold = world.config.marker.evaporationThreshold;
 
-                    const marker = map.get(x, y);
-
-                    if (!marker || marker.destroyed || !marker.power || visitedMarkers.has(marker))
-                        continue;
-
-                    const angle = Math.abs(
-                        Math.atan2(marker.y - ant.y, marker.x - ant.x) - ant.rotation
-                    );
-                    const inRange = angle < 5 * Math.PI / 6;
-
-                    if (
-                        inRange &&
-                        ((ant.isForaging() && marker.type === 'food') ||
-                            (ant.isCarryingFood() && marker.type === 'home'))
-                    ) {
-                        if (!marker.permanent) {
-                            visitedMarkers.add(marker);
-                        }
-
-                        strongestMarker =
-                            strongestMarker && strongestMarker.power > marker.power
-                                ? strongestMarker
-                                : marker;
-                    }
+            if (Math.max(probeL, probeC, probeR) > threshold) {
+                // Steer toward the strongest probe
+                if (probeC >= probeL && probeC >= probeR) {
+                    // Center is strongest — keep heading, no correction needed
+                } else if (probeL > probeR) {
+                    ant.rotation -= spread * 0.5;
+                } else {
+                    ant.rotation += spread * 0.5;
                 }
-            }
-
-            // const rotationAngle = Math.PI / 6;
-            // const rotation = ant.rotation;
-
-            // const left = map.get(
-            //     Math.round(antX - Math.cos(rotation)) * ant.smellRange,
-            //     Math.round(antY - Math.sin(rotation)) * ant.smellRange
-            // );
-            // const center = map.get(
-            //     Math.round(antX - Math.cos(rotation - rotationAngle)) * ant.smellRange,
-            //     Math.round(antY - Math.sin(rotation - rotationAngle)) * ant.smellRange
-            // );
-            // const right = map.get(
-            //     Math.round(antX - Math.cos(rotation + rotationAngle)) * ant.smellRange,
-            //     Math.round(antY - Math.sin(rotation + rotationAngle)) * ant.smellRange
-            // );
-
-            // strongestMarker = [left, center, right]
-            //     .sort((a, b) => (b?.power ?? 0) - (a?.power ?? 0))
-            //     .at(0);
-
-            if (strongestMarker) {
-                ant.rotation = Math.atan2(strongestMarker.y - ant.y, strongestMarker.x - ant.x);
             } else {
                 ant.applyRotationNoise();
             }

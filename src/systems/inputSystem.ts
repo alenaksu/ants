@@ -1,55 +1,50 @@
-import { Application, BLEND_MODES } from 'pixi.js';
-import { Config, World } from '../components/World';
+import { World } from '../components/World';
 import { Pane } from 'tweakpane';
+import { Config, System } from '../types';
 
-export const createInputSystem = (world: World, app: Application, config: Config) => {
+export const createInputSystem: System = (world: World, config: Config) => {
     window.addEventListener('contextmenu', (e) => e.preventDefault());
 
+    const app = world.app;
     const drop = (e: MouseEvent) => {
         e.preventDefault();
         e.stopPropagation();
 
+        const bounds = app.canvas.getBoundingClientRect();
+
         if (e.buttons) {
             world[e.buttons === 1 ? 'createFood' : 'createHome']({
-                x: e.clientX,
-                y: e.clientY,
+                x: ((e.clientX - bounds.left) / bounds.width) * app.screen.width,
+                y: ((e.clientY - bounds.top) / bounds.height) * app.screen.height,
             });
         }
     };
 
-    (app.view as HTMLCanvasElement).addEventListener('mousemove', drop);
-    (app.view as HTMLCanvasElement).addEventListener('mousedown', drop);
+    (app.canvas as HTMLCanvasElement).addEventListener('mousemove', drop);
+    (app.canvas as HTMLCanvasElement).addEventListener('mousedown', drop);
 
     const pane = new Pane();
-    pane.addBinding(config, 'antSpeed', {
-        min: 0,
-        max: 10,
-        step: 1,
-        label: 'Ant speed',
+    const monitor = { fps: 0 };
+
+    // --- Simulation folder ---
+    const simConfig = pane.addFolder({ title: 'Simulation' });
+
+    simConfig.addBinding(monitor, 'fps', { readonly: true, label: 'FPS' });
+
+    simConfig.addBinding(config, 'scale', {
+        min: 0.1,
+        max: 1,
+        step: 0.1,
+        label: 'Scale',
     }).on('change', (e) => {
-        for (const ant of world.ants) {
-            ant.speed = e.value;
-        }
+        const newW = Math.floor(window.innerWidth * e.value);
+        const newH = Math.floor(window.innerHeight * e.value);
+        app.renderer.resize(newW, newH);
+        world.reset();
+        world.createColony(config.antCount, { x: newW / 2, y: newH / 2 });
     });
 
-    pane.addBinding(config, 'smellRange', {
-        min: 1,
-        max: 500,
-        step: 1,
-        label: 'Ant smell range',
-    }).on('change', (e) => {
-        for (const ant of world.ants) {
-            ant.smellRange = e.value;
-        }
-    });
-
-    pane.addBinding(config, 'showMarkers', { label: 'Show markers' }).on('change', (e) => {
-        for (const marker of world.markers) {
-            marker.visible = e.value;
-        }
-    });
-
-    pane.addBinding(config, 'pause').on('change', (e) => {
+    simConfig.addBinding(config, 'pause').on('change', (e) => {
         if (e.value) {
             app.ticker.stop();
         } else {
@@ -57,17 +52,53 @@ export const createInputSystem = (world: World, app: Application, config: Config
         }
     });
 
-    pane.addBlade({
-        view: 'separator',
+    // --- Ants folder ---
+    const antsConfig = pane.addFolder({ title: 'Ants' });
+
+    antsConfig.addBinding(config, 'antCount', {
+        min: 1,
+        max: 2000,
+        step: 1,
+        label: 'Count',
+    }).on('change', (_e) => {
+        world.reset();
+        world.createColony(config.antCount, {
+            x: app.screen.width / 2,
+            y: app.screen.height / 2,
+        });
     });
 
-    pane.addBinding(config, 'blendMode', {
-        label: 'Blend mode',
-        options: BLEND_MODES,
-        value: BLEND_MODES.ADD,
+    antsConfig.addBinding(config.ant, 'speed', {
+        min: 0,
+        max: 10,
+        step: 1,
+        label: 'Speed',
     }).on('change', (e) => {
-        world.markersContainer.blendMode = e.value;
+        for (const ant of world.ants) {
+            ant.speed = e.value;
+        }
     });
 
-    return () => {};
+    antsConfig.addBinding(config.ant, 'smellRange', {
+        min: 1,
+        max: 500,
+        step: 1,
+        label: 'Smell range',
+    }).on('change', (e) => {
+        for (const ant of world.ants) {
+            ant.smellRange = e.value;
+        }
+    });
+
+    // --- Markers folder ---
+    const markersConfig = pane.addFolder({ title: 'Markers' });
+    markersConfig.addBinding(config.marker, 'show', { label: 'Show/Hide' }).on('change', (e) => {
+        world.foodMarkerMap.mapSprite.visible = e.value as boolean;
+        world.homeMarkerMap.mapSprite.visible = e.value as boolean;
+    });
+
+    return (ticker) => {
+        monitor.fps = Math.round(ticker.FPS);
+        pane.refresh();
+    };
 };
