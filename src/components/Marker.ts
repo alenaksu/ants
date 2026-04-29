@@ -1,31 +1,10 @@
-import { Application, Assets, Graphics, Sprite, Texture } from 'pixi.js';
+import { Application, Assets, Sprite, Texture } from 'pixi.js';
 import { World } from './World';
 import { clamp, colors } from '../utils';
 import defaultConfig from '../config';
 import scentTexture from '../assets/scent.png';
 
 await Assets.load([scentTexture]);
-
-let texture: Texture;
-
-// function generateSprite(app: Application, size: number) {
-//     if (!texture) {
-//         const canvas = app.view as HTMLCanvasElement;
-//         const gradient = canvas
-//             .getContext('2d')
-//             ?.createRadialGradient(size / 2, size / 2, size, size / 2, size / 2, size);
-
-//         const disc = new Graphics();
-//         // disc.beginFill(0xffffff, 0.8);
-//         disc.drawCircle(0, 0, size);
-//         disc.cacheAsBitmap = true;
-//         disc.endFill();
-
-//         texture = app.renderer.generateTexture(disc);
-//     }
-
-//     return texture;
-// }
 
 export class Marker extends Sprite {
     power: number = defaultConfig.marker.power;
@@ -38,7 +17,7 @@ export class Marker extends Sprite {
     }
 
     constructor(public world: World, public app: Application, public type: 'food' | 'home') {
-        super(Sprite.from(scentTexture));
+        super({ texture: Texture.from(scentTexture) });
 
         this.anchor.set(0.5);
         this.tint = type === 'food' ? colors.food : colors.home;

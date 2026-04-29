@@ -12,11 +12,13 @@ export default {
         releaseRate: 1,
     },
     marker: {
-        evaporationRate: 0.996,
-        evaporationThreshold: 0.01,
+        evaporationRate: 0.998,
+        evaporationThreshold: 0.001,
         power: 1,
         maxPower: 10,
         show: true
     },
+    scale: 0.5,
+    antCount: 200,
     pause: false
 } as Config;

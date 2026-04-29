@@ -1,4 +1,4 @@
-import { Ticker, TickerCallback } from "pixi.js";
+import { TickerCallback } from "pixi.js";
 import { World } from "./components/World";
 
 export interface Config {
@@ -18,6 +18,8 @@ export interface Config {
         maxPower: number;
         show: boolean;
     };
+    scale: number;
+    antCount: number;
     pause: boolean;
 }
 

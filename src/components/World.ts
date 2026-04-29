@@ -5,6 +5,7 @@ import { Home } from './Home';
 import { Food } from './Food';
 import { MarkerMap } from './MarkerMap';
 import { Config } from '../types';
+import { colors } from '../utils';
 
 export class World {
     ants: Ant[] = [];
@@ -16,10 +17,34 @@ export class World {
     container = new Container();
 
     constructor(public app: Application, public config: Config) {
-        this.foodMarkerMap = new MarkerMap(app, config);
-        this.homeMarkerMap = new MarkerMap(app, config);
+        this.foodMarkerMap = new MarkerMap(app, config, colors.food);
+        this.homeMarkerMap = new MarkerMap(app, config, colors.home);
 
+        app.stage.addChild(this.foodMarkerMap.mapSprite);
+        app.stage.addChild(this.homeMarkerMap.mapSprite);
         app.stage.addChild(this.container);
+    }
+
+    reset() {
+        // Destroy all entities
+        this.ants.forEach(ant => ant.destroy());
+        this.ants = [];
+        this.foods.forEach(food => food.destroy());
+        this.foods.clear();
+        this.homes.forEach(home => home.destroy());
+        this.homes.clear();
+
+        // Remove old marker sprites from stage, dispose GPU resources
+        this.app.stage.removeChild(this.foodMarkerMap.mapSprite);
+        this.app.stage.removeChild(this.homeMarkerMap.mapSprite);
+        this.foodMarkerMap.dispose();
+        this.homeMarkerMap.dispose();
+
+        // Create new marker maps at current app.screen dimensions
+        this.foodMarkerMap = new MarkerMap(this.app, this.config, colors.food);
+        this.homeMarkerMap = new MarkerMap(this.app, this.config, colors.home);
+        this.app.stage.addChild(this.foodMarkerMap.mapSprite);
+        this.app.stage.addChild(this.homeMarkerMap.mapSprite);
     }
 
     *getMarkers() {

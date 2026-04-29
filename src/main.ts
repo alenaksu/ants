@@ -7,20 +7,17 @@ import defaultConfig from './config';
 import { Application } from 'pixi.js';
 import { Config } from './types';
 
-const app = new Application();
-await app.init({
-    background: '#111',
-    width: 800,
-    height: 800,
-    resolution: 1,
-    // resizeTo: window,
-});
-
-// app.stage.filters = [new PixelateFilter(4)];
-
 const config: Config = {
     ...defaultConfig,
 };
+
+const app = new Application();
+await app.init({
+    background: '#111',
+    width: Math.floor(window.innerWidth * config.scale),
+    height: Math.floor(window.innerHeight * config.scale),
+    resolution: 1,
+});
 
 const world = new World(app, config);
 const antSystem = await createAntSystem(world, config);
@@ -39,7 +36,7 @@ app.ticker.add(render);
 
 document.body.appendChild(app.canvas as any);
 
-world.createColony(50, {
+world.createColony(config.antCount, {
     x: app.screen.width / 2,
     y: app.screen.height / 2,
 });
