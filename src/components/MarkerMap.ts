@@ -231,10 +231,6 @@ export class MarkerMap {
 
     private saveGlState(): GlState {
         const activeTexture = this.gl.getParameter(this.gl.ACTIVE_TEXTURE);
-        const framebuffer = this.gl.getParameter(this.gl.FRAMEBUFFER_BINDING);
-        const vao = this.gl.getParameter(this.gl.VERTEX_ARRAY_BINDING);
-        const program = this.gl.getParameter(this.gl.CURRENT_PROGRAM);
-        const viewport = this.gl.getParameter(this.gl.VIEWPORT);
 
         const gl = this.gl;
         gl.activeTexture(gl.TEXTURE0);
