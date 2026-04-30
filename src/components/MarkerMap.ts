@@ -61,7 +61,7 @@ const colorizeFragment = `#version 300 es
 
     void main() {
         float value = texture(uTexture, vUv).r;
-        float normalized = clamp(value, 0.0, 1.0);
+        float normalized = clamp(value / uMaxPower, 0.0, 1.0);
         outColor = vec4(uTint * normalized, normalized);
     }
 `;
